@@ -1,0 +1,21 @@
+txt# 環境設定（機密情報）
+.env
+
+# 生成される音声ファイル
+static/*.mp3
+
+# アップロードフォルダ
+uploads/
+
+#temp_audioファイル
+temp_audio/*.mp3
+
+# Pythonキャッシュ
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# その他
+.DS_Store

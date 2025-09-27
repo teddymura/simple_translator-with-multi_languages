@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>音声翻訳アプリ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: #f8f9fa;
+    }
+    .btn-lg {
+      padding: 1.2rem;
+      font-size: 1.2rem;
+      border-radius: 0.75rem;
+    }
+    .card {
+      border-radius: 0.75rem;
+    }
+    .app-header {
+      background: #0d6efd;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.3rem;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-header">🎙️ 音声翻訳アプリ</div>
+
+<div class="container py-4">
+
+  <!-- 言語選択 -->
+  <div class="mb-4 text-center">
+    <label for="target_lang" class="form-label">翻訳先の言語</label>
+    <select id="target_lang" class="form-select form-select-lg">
+      <option value="ja">日本語</option>
+      <option value="en">英語</option>
+      <option value="fr">フランス語</option>
+      <option value="de">ドイツ語</option>
+      <option value="zh-cn">中国語（簡体字）</option>
+      <option value="zh-tw">中国語（繁体字）</option>
+      <option value="es">スペイン語</option>
+      <option value="ko">韓国語</option>
+    </select>
+  </div>
+
+  <!-- ボタン -->
+  <div class="d-grid gap-3 mb-4">
+    <button class="btn btn-danger btn-lg" onclick="startRecording()">🎤 録音開始</button>
+    <button class="btn btn-secondary btn-lg" onclick="stopRecording()">⏹️ 録音停止</button>
+  </div>
+
+  <!-- ステータス -->
+  <p id="status" class="text-center fw-bold text-primary"></p>
+
+  <!-- 結果 -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <h5 class="card-title">認識結果</h5>
+      <p id="recognized" class="card-text text-muted fs-6"></p>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <h5 class="card-title">翻訳結果</h5>
+      <p id="translated" class="card-text fs-5 fw-bold text-dark"></p>
+    </div>
+  </div>
+
+  <!-- 音声 -->
+  <div class="text-center">
+    <audio id="audio" controls class="w-100"></audio>
+  </div>
+</div>
+
+<script>
+let mediaRecorder;
+let audioChunks = [];
+
+async function startRecording() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  mediaRecorder = new MediaRecorder(stream);
+  audioChunks = [];
+
+  mediaRecorder.ondataavailable = e => {
+    if (e.data.size > 0) audioChunks.push(e.data);
+  };
+
+  mediaRecorder.start();
+  document.getElementById("status").textContent = "🎙️ 録音中...";
+}
+
+function stopRecording() {
+  if (!mediaRecorder) return;
+  mediaRecorder.stop();
+  mediaRecorder.onstop = async () => {
+    document.getElementById("status").textContent = "⏳ 処理中...";
+    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+
+    const blob = new Blob(audioChunks, { type: "audio/wav" });
+    const formData = new FormData();
+    formData.append("audio", blob, `recording_${Date.now()}.wav`);
+    formData.append("target_lang", document.getElementById("target_lang").value);
+
+    const res = await fetch("/api/translate_tts", { method: "POST", body: formData });
+    const data = await res.json();
+
+    document.getElementById("status").textContent = "✅ 完了";
+    document.getElementById("recognized").textContent = data.recognized_text;
+    document.getElementById("translated").textContent = data.translated_text;
+
+    const audioElem = document.getElementById("audio");
+    audioElem.src = data.audio_file + "?t=" + new Date().getTime();
+    audioElem.play();
+  };
+}
+</script>
+</body>
+</html>
