@@ -1,0 +1,30 @@
+txt# 環境設定（機密情報）
+.env
+
+# アップロードフォルダ
+uploads/
+
+#temp_audioファイル
+temp_audio/
+
+# Pythonキャッシュ
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.mp3
+*.exe
+*.wav
+
+#ngrokの設定ファイル
+ngrok.exe
+
+*.ext
+
+# 仮想環境
+venv/
+
+
+# その他
+.DS_Store
